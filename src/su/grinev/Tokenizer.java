@@ -3,67 +3,47 @@ package su.grinev;
 import java.util.LinkedList;
 import java.util.List;
 
+import static su.grinev.Token.TokenType.*;
+
 public class Tokenizer {
 
     public List<Token> Tokenize(List<Character> characterList) {
         List<Token> tokens = new LinkedList<>();
         while (characterList.size() != 0) {
             char c = characterList.get(0);
-            if (c == '{') {
-                tokens.add(new Token(Token.TokenType.TOKEN_OPEN_CURLY_BRACE, "{"));
-                characterList.remove(0);
-                continue;
-            }
-            if (c == '}') {
-                tokens.add(new Token(Token.TokenType.TOKEN_CLOSE_CURLY_BRACE, "}"));
-                characterList.remove(0);
-                continue;
-            }
-            if (c == '[') {
-                tokens.add(new Token(Token.TokenType.TOKEN_OPEN_SQUARE_BRACKET, "["));
-                characterList.remove(0);
-                continue;
-            }
-            if (c == ']') {
-                tokens.add(new Token(Token.TokenType.TOKEN_CLOSE_SQUARE_BRACKET, "]"));
-                characterList.remove(0);
-                continue;
-            }
-            if (c == ':') {
-                tokens.add(new Token(Token.TokenType.TOKEN_COLON, ":"));
-                characterList.remove(0);
-                continue;
-            }
-            if (c == ',') {
-                tokens.add(new Token(Token.TokenType.TOKEN_COMMA, ","));
-                characterList.remove(0);
-                continue;
-            }
+            if (c == '{' || c == '}' || c == '[' || c == ']' || c == ':' || c == ',') {
+                switch (c) {
+                    case '{' -> tokens.add(new Token(TOKEN_OPEN_CURLY_BRACE, "{"));
+                    case '}' -> tokens.add(new Token(TOKEN_CLOSE_CURLY_BRACE, "}"));
+                    case '[' -> tokens.add(new Token(TOKEN_OPEN_SQUARE_BRACKET, "["));
+                    case ']' -> tokens.add(new Token(TOKEN_CLOSE_SQUARE_BRACKET, "]"));
+                    case ':' -> tokens.add(new Token(TOKEN_COLON, ":"));
+                    case ',' -> tokens.add(new Token(TOKEN_COMMA, ","));
+                }
+                advanceList(characterList, 1);
+            } else
             if (c == '"') {
-                tokens.add(new Token(Token.TokenType.TOKEN_STRING, parseString(characterList)));
-                continue;
-            }
+                String parsedString = parseString(characterList);
+                tokens.add(new Token(TOKEN_STRING, parsedString));
+                advanceList(characterList, parsedString.length()+2);
+            } else
             if (c == 'T' || c == 't') {
                 String trueString = "true";
                 tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, trueString));
                 advanceList(characterList, trueString.length());
-                continue;
-            }
+            } else
             if (c == 'F' || c == 'f') {
                 String falseString = "false";
                 tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, falseString));
                 advanceList(characterList, falseString.length());
-                continue;
-            }
+            } else
             if (c == 'N' || c == 'n') {
                 String nullString = "null";
                 tokens.add(new Token(Token.TokenType.TOKEN_NULL, nullString));
                 advanceList(characterList, nullString.length());
-                continue;
-            }
+            } else
             if (c >= '0' && c <= '9' || c == '-') {
                 tokens.add(new Token(Token.TokenType.TOKEN_NUMBER, parseNumber(characterList)));
-                continue;
             }
         }
         return tokens;
@@ -71,39 +51,39 @@ public class Tokenizer {
 
     private String parseString(List<Character> characterList) {
         StringBuilder stringBuilder = new StringBuilder();
-        characterList.remove(0); // remove the leading quote
+        int index = 1; // remove the leading quote
         while (true) {
-            if (characterList.size() == 0) {
+            if (characterList.size() == index) {
                 // throw new NonTerminatedStringException(
             }
-            char c = characterList.remove(0);
+            char c = characterList.get(index++);
             if (c == '"') return stringBuilder.toString();
             // escape sequence processing
             if (c == '\\') {
-                c = characterList.remove(0);
+                c = characterList.get(index++);
                 if (c == '"') {
                     stringBuilder.append('"');
-                }
+                } else
                 if (c == '\\') {
                     stringBuilder.append('\\');
-                }
+                } else
                 if (c == 'b') {
                     stringBuilder.append('\b');
-                }
+                } else
                 if (c == 'f') {
                     stringBuilder.append('\f');
-                }
+                } else
                 if (c == 'n') {
                     stringBuilder.append('\n');
-                }
+                } else
                 if (c == 'r') {
                     stringBuilder.append('\r');
-                }
+                } else
                 if (c == 't') {
                     stringBuilder.append('\t');
-                }
+                } else
                 if (c == 'u') { // u<HEX><HEX><HEX><HEX>
-                    stringBuilder.append((char) Integer.parseInt(characterList.remove(0) + characterList.remove(0) + characterList.remove(0) + characterList.remove(0) + "", 16));
+                    stringBuilder.append((char) Integer.parseInt(characterList.get(index++) + characterList.get(index++) + characterList.get(index++) + characterList.get(index++) + "", 16));
                 }
             } else {
                 stringBuilder.append(c); // put the plain character as is
@@ -112,28 +92,28 @@ public class Tokenizer {
     }
 
     private String parseNumber(List<Character> characterList) {
-        String number = "";
+        StringBuilder number = new StringBuilder();
         boolean hasFraction = false;
         boolean hasExponent = false;
         while (true) {
             char c = characterList.get(0);
             if (Character.isDigit(c) || c == '-') {
-                number = number + parseDigits(characterList);
+                number.append(parseDigits(characterList));
             } else
             if (c == '.' && !hasFraction) {
-                number = number + '.';
+                number.append('.');
                 characterList.remove(0);
-                number = number + parseDigits(characterList);
+                number.append(parseDigits(characterList));
                 hasFraction = true;
             } else
             if (c == 'E' || c == 'e' && !hasExponent) {
                 c = characterList.remove(0);
                 if (c == '-' || c == '+') {
-                    number = number + c;
+                    number.append(c);
                 }
-                number = number + parseDigits(characterList);
+                number.append(parseDigits(characterList));
                 hasExponent = true;
-            } else return number;
+            } else return number.toString();
         }
     }
 
@@ -151,8 +131,8 @@ public class Tokenizer {
     }
 
     private void advanceList(List list, int count) {
-        for (int i = 0; i != count; i++) {
-            list.remove(0);
+        if (count > 0) {
+            list.subList(0, count).clear();
         }
     }
 
