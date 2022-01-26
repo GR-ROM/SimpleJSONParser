@@ -20,12 +20,12 @@ public class Tokenizer {
                 continue;
             }
             if (c == '[') {
-                tokens.add(new Token(Token.TokenType.TOKEN_OPEN_SQUARE_BRACKET));
+                tokens.add(new Token(Token.TokenType.TOKEN_OPEN_SQUARE_BRACKET, "["));
                 characterList.remove(0);
                 continue;
             }
             if (c == ']') {
-                tokens.add(new Token(Token.TokenType.TOKEN_CLOSE_SQUARE_BRACKET));
+                tokens.add(new Token(Token.TokenType.TOKEN_CLOSE_SQUARE_BRACKET, "]"));
                 characterList.remove(0);
                 continue;
             }
@@ -44,15 +44,21 @@ public class Tokenizer {
                 continue;
             }
             if (c == 'T' || c == 't') {
-                tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, "true"));
+                String trueString = "true";
+                tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, trueString));
+                advanceList(characterList, trueString.length());
                 continue;
             }
             if (c == 'F' || c == 'f') {
-                tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, "false"));
+                String falseString = "false";
+                tokens.add(new Token(Token.TokenType.TOKEN_BOOLEAN, falseString));
+                advanceList(characterList, falseString.length());
                 continue;
             }
             if (c == 'N' || c == 'n') {
-                tokens.add(new Token(Token.TokenType.TOKEN_NULL, "null"));
+                String nullString = "null";
+                tokens.add(new Token(Token.TokenType.TOKEN_NULL, nullString));
+                advanceList(characterList, nullString.length());
                 continue;
             }
             if (c >= '0' && c <= '9' || c == '-') {
@@ -141,6 +147,12 @@ public class Tokenizer {
                 characterList.add(0, c);
                 return number;
             }
+        }
+    }
+
+    private void advanceList(List list, int count) {
+        for (int i = 0; i != count; i++) {
+            list.remove(0);
         }
     }
 
