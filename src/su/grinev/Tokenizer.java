@@ -60,30 +60,16 @@ public class Tokenizer {
             if (c == '"') return stringBuilder.toString();
             // escape sequence processing
             if (c == '\\') {
-                c = characterList.get(index++);
-                if (c == '"') {
-                    stringBuilder.append('"');
-                } else
-                if (c == '\\') {
-                    stringBuilder.append('\\');
-                } else
-                if (c == 'b') {
-                    stringBuilder.append('\b');
-                } else
-                if (c == 'f') {
-                    stringBuilder.append('\f');
-                } else
-                if (c == 'n') {
-                    stringBuilder.append('\n');
-                } else
-                if (c == 'r') {
-                    stringBuilder.append('\r');
-                } else
-                if (c == 't') {
-                    stringBuilder.append('\t');
-                } else
-                if (c == 'u') { // u<HEX><HEX><HEX><HEX>
-                    stringBuilder.append((char) Integer.parseInt(characterList.get(index++) + characterList.get(index++) + characterList.get(index++) + characterList.get(index++) + "", 16));
+                switch (characterList.get(index++)) {
+                    case '"' -> stringBuilder.append('"');
+                    case '\\' -> stringBuilder.append('\\');
+                    case 'b' -> stringBuilder.append('\b');
+                    case 'f' -> stringBuilder.append('\f');
+                    case 'n' -> stringBuilder.append('\n');
+                    case 'r' -> stringBuilder.append('\r');
+                    case 't' -> stringBuilder.append('\t');
+                    case 'u' -> stringBuilder.append((char) Integer.parseInt(characterList.get(index++)
+                            + characterList.get(index++) + characterList.get(index++) + characterList.get(index++) + "", 16));
                 }
             } else {
                 stringBuilder.append(c); // put the plain character as is
