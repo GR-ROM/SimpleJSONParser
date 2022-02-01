@@ -1,5 +1,6 @@
 package su.grinev;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -8,7 +9,7 @@ import static su.grinev.Token.TokenType.*;
 public class Tokenizer {
 
     public List<Token> Tokenize(List<Character> characterList) {
-        List<Token> tokens = new LinkedList<>();
+        List<Token> tokens = new ArrayList<>();
         while (characterList.size() != 0) {
             char c = characterList.get(0);
             if (c == '{' || c == '}' || c == '[' || c == ']' || c == ':' || c == ',') {
@@ -25,7 +26,6 @@ public class Tokenizer {
             if (c == '"') {
                 String parsedString = parseString(characterList);
                 tokens.add(new Token(TOKEN_STRING, parsedString));
-                advanceList(characterList, parsedString.length()+2);
             } else
             if (c == 'T' || c == 't') {
                 String trueString = "true";
@@ -57,7 +57,10 @@ public class Tokenizer {
                 // throw new NonTerminatedStringException(
             }
             char c = characterList.get(index++);
-            if (c == '"') return stringBuilder.toString();
+            if (c == '"') {
+                advanceList(characterList, index);
+                return stringBuilder.toString();
+            }
             // escape sequence processing
             if (c == '\\') {
                 switch (characterList.get(index++)) {
