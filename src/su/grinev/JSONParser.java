@@ -1,6 +1,6 @@
 package su.grinev;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.toCollection;
@@ -18,19 +18,33 @@ public class JSONParser {
     private final Tokenizer tokenizer = new Tokenizer();
 
     public Object Parse(String JSONString) {
+        long delta = System.currentTimeMillis();
         List<Character> characterList = JSONString
                 .chars()
                 .filter(c -> c != ' ' && c != '\n' && c != '\r' && c != '\t')
                 .mapToObj(c -> (char)c)
-                .collect(toCollection(LinkedList::new));
+                .collect(toCollection(ArrayList::new));
+        System.out.println("Filter: " + (System.currentTimeMillis() - delta) + "ms");
 
+        delta = System.currentTimeMillis();
         List<Token> tokenList = tokenizer.Tokenize(characterList);
-        if (tokenList.remove(0).tokenType == TOKEN_OPEN_CURLY_BRACE) {
-            return parseObject(tokenList);
-        } else {
-            if (tokenList.remove(0).tokenType == TOKEN_OPEN_SQUARE_BRACKET) {
-                return parseArray(tokenList);
-            }
+        System.out.println("Tokenization: " + (System.currentTimeMillis() - delta) + "ms");
+
+        System.out.println(tokenList.size() + " items");
+
+        delta = System.currentTimeMillis();
+
+        if (tokenList.get(0).tokenType == TOKEN_OPEN_CURLY_BRACE) {
+            tokenList.remove(0);
+            JSONObject jsonObject = parseObject(tokenList);
+            System.out.println("Parsing: " + (System.currentTimeMillis() - delta) + "ms");
+            return jsonObject;
+        } else
+        if (tokenList.get(0).tokenType == TOKEN_OPEN_SQUARE_BRACKET) {
+            tokenList.remove(0);
+            JSONArray jsonArray = parseArray(tokenList);
+            System.out.println("Parsing: " + (System.currentTimeMillis() - delta) + "ms");
+            return jsonArray;
         }
         return null;
     }
@@ -42,10 +56,7 @@ public class JSONParser {
         while (tokenList.size() != 0) {
             Token token = tokenList.remove(0);
             switch (token.tokenType) {
-                case TOKEN_EMPTY: {
-                    continue;
-                }
-                case TOKEN_STRING: {
+                case TOKEN_STRING -> {
                     if (stage == Stage.EXPECT_KEY) {
                         name = token.value;
                         stage = Stage.EXPECT_COLON;
@@ -54,55 +65,49 @@ public class JSONParser {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_STRING, token.value));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_NUMBER: {
+                case TOKEN_NUMBER -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_NUMBER, Float.parseFloat(token.value)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_BOOLEAN: {
+                case TOKEN_BOOLEAN -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_BOOLEAN, Boolean.parseBoolean(token.value)));
                         stage = Stage.READ_VALUE;
                     }
                 }
-                case TOKEN_NULL: {
+                case TOKEN_NULL -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_NULL, "null"));
                         stage = Stage.READ_VALUE;
                     }
                 }
-                case TOKEN_COLON: {
+                case TOKEN_COLON -> {
                     if (stage == Stage.EXPECT_COLON) {
                         stage = Stage.EXPECT_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_COMMA: {
+                case TOKEN_COMMA -> {
                     if (stage == Stage.READ_VALUE) {
                         stage = Stage.EXPECT_KEY;
-                        continue;
                     }
                 }
-                case TOKEN_OPEN_CURLY_BRACE: {
+                case TOKEN_OPEN_CURLY_BRACE -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_OBJECT, parseObject(tokenList)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_OPEN_SQUARE_BRACKET: {
+                case TOKEN_OPEN_SQUARE_BRACKET -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         object.put(name, new JSONValue(JSONValue.type.JSON_ARRAY, parseArray(tokenList)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_CLOSE_CURLY_BRACE: {
+                case TOKEN_CLOSE_CURLY_BRACE -> {
                     if (stage == Stage.READ_VALUE) {
                         return object;
                     }
@@ -118,51 +123,44 @@ public class JSONParser {
         while (tokenList.size() != 0) {
             Token token = tokenList.remove(0);
             switch (token.tokenType) {
-                case TOKEN_EMPTY: {
-                    continue;
+                case TOKEN_EMPTY -> {
                 }
-                case TOKEN_STRING: {
+                case TOKEN_STRING -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         array.add(new JSONValue(JSONValue.type.JSON_STRING, token.value));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_NUMBER: {
+                case TOKEN_NUMBER -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         array.add(new JSONValue(JSONValue.type.JSON_NUMBER, Float.parseFloat(token.value)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_BOOLEAN: {
+                case TOKEN_BOOLEAN -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         array.add(new JSONValue(JSONValue.type.JSON_BOOLEAN, Boolean.parseBoolean(token.value)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_NULL: {
+                case TOKEN_NULL -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         array.add(new JSONValue(JSONValue.type.JSON_NULL, "null"));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_OPEN_CURLY_BRACE: {
+                case TOKEN_OPEN_CURLY_BRACE -> {
                     if (stage == Stage.EXPECT_VALUE) {
                         array.add(new JSONValue(JSONValue.type.JSON_OBJECT, parseObject(tokenList)));
                         stage = Stage.READ_VALUE;
-                        continue;
                     }
                 }
-                case TOKEN_COMMA: {
+                case TOKEN_COMMA -> {
                     if (stage == Stage.READ_VALUE) {
-                        stage = Stage.EXPECT_KEY;
-                        continue;
+                        stage = Stage.EXPECT_VALUE;
                     }
                 }
-                case TOKEN_CLOSE_SQUARE_BRACKET: {
+                case TOKEN_CLOSE_SQUARE_BRACKET -> {
                     if (stage == Stage.READ_VALUE) {
                         return array;
                     }
